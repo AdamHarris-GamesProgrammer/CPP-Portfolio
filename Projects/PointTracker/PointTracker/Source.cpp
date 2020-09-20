@@ -1,6 +1,4 @@
-//Conio is supported by most compilers but not all
 #include <conio.h>
-
 #include <fstream>
 
 namespace BasicString {
@@ -86,71 +84,94 @@ namespace BasicString {
 	}
 }
 
+class Database {
+public:
+	Database() {}
+	Database(char* name, int points)
+	{
+		mName = name;
+		mPoints = points;
+	}
+
+	char* GetName() { return mName; }
+	int GetPoints() { return mPoints; }
+
+	void SetName(char* name) { mName = name; }
+	void SetPoints(int value) { mPoints = value; }
+
+private:
+	char* mName;
+	int mPoints;
+
+};
+
 using namespace BasicString;
 
-int main()
-{
-	//ifstream is a input file stream
-	std::ifstream inFile("LoadTest.txt");
+int main() {
+	Database entries[10];
 
-	if (inFile) {
-		BasicString::Print("LoadTest.txt has been loaded");
-	}
-	else
-	{
-		BasicString::Print("LoadTest.txt has failed to load");
-		return -1;
-	}
+	int userChoice = 0;
+	int currentEntry = 0;
 
-	//moves the get pointer to position 7
-	inFile.seekg(7);
+	do {
+		BasicString::Print("What would you like to do (1-5): ");
+		BasicString::Print("1: Save a file\n2: Load a File\n3: Add Data to Current Set\n4: Print Current Data\n5: Exit\nPlease enter your input: ", false);
 
-	//moves the get pointer to 2 bytes after the current position
-	inFile.seekg(2, std::ios_base::cur);
+		char buffer[100];
+		BasicString::Read(buffer, 2);
+		BasicString::Print("");
+		userChoice = BasicString::StrToInt(buffer);
 
-	//moves the get pointer to 3 bytes before the current position
-	inFile.seekg(-3, std::ios_base::cur);
+		switch (userChoice) {
+		case 0:
+			BasicString::Print("Please enter valid input");
+			break;
+		case 1:
+			BasicString::Print("Enter a filename: ", false);
+			{
 
-	//gets the length of the get pointer in the file
-	inFile.seekg(0, std::ios_base::end);
-	const int length = inFile.tellg();
-	BasicString::Print("[File Size]: ", false);
-	char buffer[256];
-	BasicString::IntToStr(length, buffer, 256);
-	BasicString::Print(buffer, false);
-	BasicString::Print(" bytes");
+				BasicString::Read(buffer, 100);
 
-	inFile.seekg(0, std::ios_base::beg);
+				const char* fileName = buffer;
+				std::ofstream outFile(fileName);
 
-	//inFile.get() gets the next character in the stream
-	for(char c = inFile.get(); inFile.good(); c = inFile.get()) {
-		_putch(c);
-	}
-	_putch('\n');
 
-	if (inFile.bad()) {
-		BasicString::Print("Error: LoadTest.txt");
-	}
-	else if (inFile.eof()) {
-		BasicString::Print("Successfully reached end of file");
-	}
-	else
-	{
-		BasicString::Print("Error encountered");
-	}
+				for (auto& index : entries) {
+					if (index.GetName() == "") break;
 
-	std::ofstream outFile("out.txt");
+					outFile.put(*index.GetName());
+					outFile.put(('\n'));
+					outFile.put(index.GetPoints());
+					outFile.put(('\n'));
+				}
+			}
 
-	for (char c = _getch(); c != 13; c = _getch()) {
-		outFile.put(c);
-		_putch(c); //outputs what the user is typing to the user making it easier to use. 
-	}
+			break;
+		case 2:
 
-	//seek p
-	outFile.seekp(0, std::ios_base::beg);
+			break;
+		case 3:
+			BasicString::Print("Enter the persons name: ", false);
+			BasicString::Read(buffer, 10);
+			entries[currentEntry].SetName(buffer);
+			BasicString::Print("\nEnter the persons score: ");
+			BasicString::Read(buffer, 3);
+			entries[currentEntry].SetPoints(BasicString::StrToInt(buffer));
+			
+			currentEntry++;
 
-	//This line means the program will continue until the user hits a keyboard button
-	while (!_kbhit());
+			if (currentEntry >= 10) {
+				BasicString::Print("Exceeding bar chart max size, will overwrite 1st element");
+			}
 
-	return 0;
+			break;
+		case 4:
+
+			break;
+		case 5:
+
+			break;
+		}
+
+	} while (userChoice != 5);
 }

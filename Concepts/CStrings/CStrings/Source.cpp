@@ -27,14 +27,18 @@ void Read(char* buf, int maxSize)
 }
 
 void ReverseString(char* buffer) {
-	char* pr = buffer;
-	for (; *pr != 0; pr++);
-	pr--;
+	char* bufferEnd = buffer;
+	for (; *bufferEnd != 0; bufferEnd++);
+	//Decrements bufferEnd to accommodate for the null terminator
+	bufferEnd--;
 
-	for (; buffer < pr; buffer++, pr--) {
+	for (; buffer < bufferEnd; buffer++, bufferEnd--) {
+		//creates a temp variable to hold the value at the current buffer place
 		const char temp = *buffer;
-		*buffer = *pr;
-		*pr = temp;
+		//swaps the buffer value to the buffer end value
+		*buffer = *bufferEnd;
+		//sets the buffer end value to the temp value, resulting in the two values being switched
+		*bufferEnd = temp;
 	}
 }
 
@@ -79,11 +83,13 @@ void IntToStr(int val, char* buffer, int size)
 
 
 int Fibonacci(int n) {
+	//variables required for algorithm
 	int previousVal = 1;
 	int secondPreviousVal = 0;
 	int total = 0;
 
-	if (n <= 2) return n;
+	//the first two results of a Fibonacci sequence are 0 and 1 therefore just return n - 1
+	if (n <= 2) return n - 1;
 
 	for (int i = 2; i < n; i++) {
 		total = secondPreviousVal + previousVal;
@@ -176,14 +182,13 @@ int main()
 	Print("What number of Fibonacci sequence would you like? ");
 	char numBuffer[128];
 	Read(numBuffer, 128);
-	int num = StrToInt(numBuffer);
-	int fibValue = Fibonacci(num);
+	int fibValue = Fibonacci(StrToInt(numBuffer));
 	
-	char test[100];
-	IntToStr(fibValue, test, 100);
+	IntToStr(fibValue, numBuffer, 128);
 
 	Print("\n");
-	Print(test);
+	Print("Fibonacci value is: ");
+	Print(numBuffer);
 
 
 
