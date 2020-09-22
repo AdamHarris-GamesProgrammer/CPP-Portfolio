@@ -2,6 +2,28 @@
 #include <fstream>
 
 namespace BasicString {
+	//This function prints a line break as a shorthand to writing one myself
+	void PrintBreak() {
+		_putch('\n');
+	}
+
+	void PrintFixed(const char* message, int width, bool lineBreak = true) {
+		int n = 0;
+
+		//This loop uses pointer arithmetic to get the next value of the message array
+		for (; *message != 0; message++) { //0 in ASCII is NULL making it the ideal character for termination
+			_putch(*message);
+			n++;
+		}
+
+		for (; n < width; n++)
+		{
+			_putch(' ');
+		}
+
+		if (lineBreak) PrintBreak();
+	}
+
 	//This function prints a message based on a array of chars
 	void Print(const char* message, bool lineBreak = true)
 	{
@@ -10,7 +32,7 @@ namespace BasicString {
 			_putch(*message);
 		}
 
-		if (lineBreak) _putch('\n');
+		if (lineBreak) PrintBreak();
 	}
 
 	//This function reads input from the user and stores it in the char* buffer that is passed in. 
@@ -82,96 +104,149 @@ namespace BasicString {
 
 		ReverseString(pStart);
 	}
+
+	void StrCopy(const char* pSrc, char* pDst, int maxBufferSize) {
+		int n = 0;
+		for (; *pSrc != 0 && (n + 1 < maxBufferSize); pSrc++, pDst++, n++)
+		{
+			*pDst = *pSrc;
+		}
+		//Adds the null terminator on the end
+		*pDst = 0;
+	}
 }
 
 class Database {
+private:
+	class Entry {
+		public:
+			Entry() = default;
+			Entry(const char* name, int value) : value(value) {
+				BasicString::StrCopy(name, this->name, sizeof(this->name));
+			}
+
+			void Print() {
+				BasicString::PrintFixed(name, nameBufferSize ,false);
+				BasicString::Print("|", false);
+				for (int n = 0; n < value; n++)
+				{
+					BasicString::Print("=", false);
+				}
+				BasicString::PrintBreak();
+			}
+
+			void SerializeData(std::ofstream& out) {
+				out.write(name, sizeof(name));
+				out.write(reinterpret_cast<const char*>(&value), sizeof(value));
+			}
+			void DeserializeData(std::ifstream& in) {
+				in.read(name, sizeof(name));
+				in.read(reinterpret_cast<char*>(&value), sizeof(value));
+			}
+
+		private:
+			//gives 11 bytes of memory to each name, allowing for a max name size of 10 characters with a null terminator byte at the end
+			static constexpr int nameBufferSize = 11;
+
+			//array of chars for the name
+			char name[nameBufferSize];
+
+			//The points that a person has
+			int value;
+	};
+
 public:
-	Database() {}
-	Database(char* name, int points)
-	{
-		mName = name;
-		mPoints = points;
+	void AddEntry(const char* name, int points) {
+		if (currentEntry < maxNumberEntries) {
+			entries[currentEntry++] = { name, points };
+		}
+	}
+	void SaveData(const char* fileName) {
+		std::ofstream outFile(fileName, std::ios::binary);
+		outFile.write(reinterpret_cast<const char*>(&currentEntry), sizeof(currentEntry));
+		for (int i = 0; i < currentEntry; i++)
+		{
+			entries[i].SerializeData(outFile);
+		}
+		
+	}
+	void LoadData(const char* fileName) {
+		std::ifstream inFile(fileName, std::ios::binary);
+		inFile.read(reinterpret_cast<char*>(&currentEntry), sizeof(currentEntry));
+		for (int i = 0; i < currentEntry; i++)
+		{
+			entries[i].DeserializeData(inFile);
+		}
 	}
 
-	char* GetName() { return mName; }
-	int GetPoints() { return mPoints; }
-
-	void SetName(char* name) { mName = name; }
-	void SetPoints(int value) { mPoints = value; }
+	void DisplayData() {
+		for (int i = 0; i < currentEntry; i++) {
+			entries[i].Print();
+		}
+	}
 
 private:
-	char* mName;
-	int mPoints;
+	//Allows a maximum of 16 entries in the database
+	static constexpr int maxNumberEntries = 16;
+	Entry entries[maxNumberEntries];
+	int currentEntry = 0;
 
 };
 
 using namespace BasicString;
 
 int main() {
-	Database entries[10];
+	Database data;
 
 	int userChoice = 0;
-	int currentEntry = 0;
 
 	do {
 		BasicString::Print("What would you like to do (1-5): ");
 		BasicString::Print("1: Save a file\n2: Load a File\n3: Add Data to Current Set\n4: Print Current Data\n5: Exit\nPlease enter your input: ", false);
 
-		char buffer[100];
+		char buffer[256];
+		char buffer2[256];
 		BasicString::Read(buffer, 2);
 		BasicString::Print("");
 		userChoice = BasicString::StrToInt(buffer);
 
-		switch (userChoice) {
-		case 0:
+		if (userChoice == 0) {
 			BasicString::Print("Please enter valid input");
-			break;
-		case 1:
-			BasicString::Print("Enter a filename: ", false);
-			{
-
-				BasicString::Read(buffer, 100);
-
-				const char* fileName = buffer;
-				std::ofstream outFile(fileName);
-
-
-				for (auto& index : entries) {
-					if (index.GetName() == "") break;
-
-					outFile.put(*index.GetName());
-					outFile.put(('\n'));
-					outFile.put(index.GetPoints());
-					outFile.put(('\n'));
-				}
-			}
-
-			break;
-		case 2:
-
-			break;
-		case 3:
-			BasicString::Print("Enter the persons name: ", false);
-			BasicString::Read(buffer, 10);
-			entries[currentEntry].SetName(buffer);
-			BasicString::Print("\nEnter the persons score: ");
-			BasicString::Read(buffer, 3);
-			entries[currentEntry].SetPoints(BasicString::StrToInt(buffer));
-			
-			currentEntry++;
-
-			if (currentEntry >= 10) {
-				BasicString::Print("Exceeding bar chart max size, will overwrite 1st element");
-			}
-
-			break;
-		case 4:
-
-			break;
-		case 5:
-
-			break;
 		}
+		else if (userChoice == 1) {
+			BasicString::Print("Enter a filename: ", false);
+			BasicString::Read(buffer, sizeof(buffer));
+			
+			BasicString::PrintBreak();
 
+			data.SaveData(buffer);
+		}
+		else if (userChoice == 2) {
+			BasicString::Print("Enter a filename: ", false);
+			BasicString::Read(buffer, sizeof(buffer));
+			
+			BasicString::PrintBreak();
+
+			data.LoadData(buffer);
+		}
+		else if (userChoice == 3) {
+			BasicString::Print("Enter the persons name: ", false);
+			BasicString::Read(buffer, 11);
+
+			BasicString::Print("\nEnter the persons score: ", false);
+			BasicString::Read(buffer2, 12);
+		
+			BasicString::PrintBreak();
+
+			data.AddEntry(buffer, BasicString::StrToInt(buffer2));
+		}
+		else if (userChoice == 4) {
+			data.DisplayData();
+		}
+		else if (userChoice == 5) {
+			BasicString::Print("Goodbye.");
+		}
 	} while (userChoice != 5);
+
+	return 0;
 }
