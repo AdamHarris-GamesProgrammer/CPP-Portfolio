@@ -126,17 +126,24 @@ private:
 			}
 
 			void Print() {
+				//formats the names nicely
 				BasicString::PrintFixed(name, nameBufferSize ,false);
+
+				//prints a separator
 				BasicString::Print("|", false);
 				for (int n = 0; n < value; n++)
 				{
+					//prints a equal sign for every point a person has
 					BasicString::Print("=", false);
 				}
+				//line break
 				BasicString::PrintBreak();
 			}
 
 			void SerializeData(std::ofstream& out) {
+				//writes the name to the file
 				out.write(name, sizeof(name));
+				//writes the points a char to the file
 				out.write(reinterpret_cast<const char*>(&value), sizeof(value));
 			}
 			void DeserializeData(std::ifstream& in) {
@@ -158,23 +165,34 @@ private:
 public:
 	void AddEntry(const char* name, int points) {
 		if (currentEntry < maxNumberEntries) {
+			//Creates a new entry object with the name and point values defined 
 			entries[currentEntry++] = { name, points };
+		}
+		else
+		{
+			BasicString::Print("Exceeding maximum amount of entries in database");
 		}
 	}
 	void SaveData(const char* fileName) {
+		//creates a output file stream in binary mode
 		std::ofstream outFile(fileName, std::ios::binary);
+
+		//writes the current entry to the file as a const char*
 		outFile.write(reinterpret_cast<const char*>(&currentEntry), sizeof(currentEntry));
 		for (int i = 0; i < currentEntry; i++)
 		{
+			//serializes the data for each entry
 			entries[i].SerializeData(outFile);
 		}
 		
 	}
 	void LoadData(const char* fileName) {
 		std::ifstream inFile(fileName, std::ios::binary);
+		//reads the data from the infile and reinterprets it as a char pointer 
 		inFile.read(reinterpret_cast<char*>(&currentEntry), sizeof(currentEntry));
 		for (int i = 0; i < currentEntry; i++)
 		{
+			//deserializes the data for each entry
 			entries[i].DeserializeData(inFile);
 		}
 	}
@@ -187,6 +205,8 @@ public:
 
 private:
 	//Allows a maximum of 16 entries in the database
+
+	//A static constexpr means that all Database objects will share the same maxNumberEntries value and it will not change after compilation
 	static constexpr int maxNumberEntries = 16;
 	Entry entries[maxNumberEntries];
 	int currentEntry = 0;
